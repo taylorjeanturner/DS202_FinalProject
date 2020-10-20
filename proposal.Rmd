@@ -1,0 +1,12 @@
+---
+title: "proposal.Rmd"
+author: "Taylor Turner, Molly Carrick, Rylan Lode, Max Wisnieski"
+date: "10/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Data: https://data.iowa.gov/Correctional-System/Current-Iowa-Correctional-System-Prison-Population/xbcv-c6t2
