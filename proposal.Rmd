@@ -1,6 +1,6 @@
 ---
 title: "proposal.Rmd"
-author: "Taylor Turner, Molly Carrick, Rylan Lode, Max Wisnieski"
+author: "Taylor Turner, Molly Carrick, Ryan Lode, Max Wisnieski, Jonathan Kelly"
 date: "10/20/2020"
 output: html_document
 ---
@@ -8,5 +8,14 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+## Group Members
+Taylor Turner, Molly Carrick, Ryan Lode, Max Wisnieski, Jonathan Kelly
 
-Data: https://data.iowa.gov/Correctional-System/Current-Iowa-Correctional-System-Prison-Population/xbcv-c6t2
+## Link to data
+https://data.iowa.gov/Correctional-System/Current-Iowa-Correctional-System-Prison-Population/xbcv-c6t2
+
+## Overview of data set
+This data set contains information of individuals currently in an Iowa prison institution or correctional facility. Information regarding age, sex, race, offense committed, and supervision status are including in the data set. Other information included about each individual are education levels, descriptions of offense, and which facility the prisoner resides in.
+
+## Brief plan of exploratory analysis
+We want to really explore the different demographics of the prisoners and see if there are any trends or correlations between any of the data. One thing to specifically look at is education levels vs amount of time served. Another thing to look at could be age vs type of offense and see if there's a possible correlation between younger individuals and more violent crimes. We can also look at months served vs race of prisoner to see if there's any correlation or possible skewness in that data. Another interesting thing to look at is if gender has any affect on type of offense. We can also explore which offenses are most common in each facility. This data set was interesting to use because it provided each prisoner's individual information and we can really dive into the demographics and see if there are any correlations. We also found it interesting because this data set is specifically for Iowa prisons and we are all students at Iowa State.
