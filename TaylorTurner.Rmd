@@ -7,9 +7,69 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(lubridate)
+library(tidyverse)
+library(scales)
 ```
-```{r}
+```{r, include = FALSE}
 data <- readr::read_csv('Current_Iowa_Correctional_System_Prison_Population.csv')
 data$`Prison Start Date` <- mdy(data$`Prison Start Date`)
 data$`Report Date` <- mdy(data$`Report Date`)
+```
+
+# Common offenses
+```{r}
+offenses <- data%>%
+  group_by(`Offense Type`, Sex)%>%
+  summarise(Total = n(), .groups = 'drop')
+
+offenses
+
+offenses%>%
+  ggplot(aes(x=`Offense Type`, y = Total, fill=Sex))+
+  geom_bar(stat='identity', position = "dodge")+ 
+  scale_fill_brewer(palette = "Set1")+
+  ggtitle('How Sex Affects Offense Type')
+
+offenses <- offenses %>%
+  mutate(Total = ifelse(Sex == "Female",Total,-1*Total))
+breaks_values <- pretty(offenses$Total)
+ggplot(data = offenses, aes(x = `Offense Type`, y = Total, fill=Sex))+
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  scale_y_continuous(breaks = breaks_values, labels = abs(breaks_values))+ 
+  scale_fill_brewer(palette = "Set1")+
+  geom_hline(yintercept = 0)+
+  ggtitle("How Gender Affects Offense Type")
+```
+
+# Distribution of gender
+```{r}
+gender <- readr::read_csv('IowaData.csv', col_names = TRUE)
+gender <- gender%>%
+  rename(Male = S0101_C03_001E, Female = S0101_C05_001E)%>%
+  select(Male, Female)
+keep = c(FALSE, TRUE)
+gender <- gender[keep,]
+gender$Male <- as.numeric(gender$Male)
+gender$Female <- as.numeric(gender$Female)
+gender <- gender %>%
+  pivot_longer(cols = c(Male, Female), names_to = "Sex", values_to = "total")%>%
+  mutate(Percent = label_percent()(total/sum(total)))
+  
+sex <- data%>%group_by(Sex)%>%
+  summarise(Total=n(), .groups = 'drop')%>%
+  mutate(Percent = label_percent()(Total/sum(Total)))
+
+ggplot(gender, aes(x=Sex, y=total, fill=Sex))+
+  geom_bar(stat='identity', width = .5)+ 
+  scale_fill_brewer(palette = "Set1")+
+  ggtitle("Male to Female Ratio for Iowa")+
+  geom_text(aes(label=Percent), vjust=0)
+
+ggplot(sex, aes(x=Sex, y=Total, fill=Sex))+
+  geom_bar(stat='identity', width = .5)+ 
+  scale_fill_brewer(palette = "Set1")+
+  ggtitle("Male to Female Ratio for Iowa Correctional System Prison Population")+
+  geom_text(aes(label=Percent), vjust=0)
 ```
