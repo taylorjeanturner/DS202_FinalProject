@@ -25,22 +25,17 @@ offenses <- data%>%
 
 offenses
 
-offenses%>%
-  ggplot(aes(x=`Offense Type`, y = Total, fill=Sex))+
-  geom_bar(stat='identity', position = "dodge")+ 
-  scale_fill_brewer(palette = "Set1")+
-  ggtitle('How Sex Affects Offense Type')
-
 offenses <- offenses %>%
-  mutate(Total = ifelse(Sex == "Female",Total,-1*Total))
+  mutate(Total = ifelse(Sex == "Male",Total,-1*Total))
 breaks_values <- pretty(offenses$Total)
-ggplot(data = offenses, aes(x = `Offense Type`, y = Total, fill=Sex))+
-  geom_bar(stat = "identity")+
+ggplot(data = offenses, aes(x=reorder(`Offense Type`, Total), y = Total, fill=Sex))+
+  geom_bar(stat = "identity", width = 0.75)+
   coord_flip()+
   scale_y_continuous(breaks = breaks_values, labels = abs(breaks_values))+ 
   scale_fill_brewer(palette = "Set1")+
   geom_hline(yintercept = 0)+
-  ggtitle("How Gender Affects Offense Type")
+  ggtitle("How Gender Affects Offense Type")+
+  xlab("Offense")
 ```
 
 # Distribution of gender
