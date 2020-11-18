@@ -1,0 +1,72 @@
+---
+title: "MaxIndividual"
+author: "Max Wisnieski"
+date: "11/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+
+df <- read.csv('Current_Iowa_Correctional_System_Prison_Population.csv')
+
+
+# Cleaning
+
+df <- df %>%
+  filter(Prison.Admission.Type == "New Admit New Sentence" & Offense.Classification != "None" & Offense.Classification != "Felony - Mandatory Minimum" & Offense.Classification != "Simple Misdemeanor" & Offense.Classification != "Serious Misdemeanor" & Offense.Classification != "Other Felony")
+
+# Plotting
+
+ggplot(df, aes(x = Race...Ethnicity, y = Months.Served)) +
+  geom_boxplot() + facet_wrap(~Offense.Classification, scales = "free_y") +
+  theme(axis.text.x = element_text(angle = 65, vjust = 1, hjust = 1)) +
+  labs(x = "Ethnicity", y = "Months Served", title = "Months Served for Ethnicities Grouped by Offense Classification")
+```
+
+```{r}
+df <- read.csv('Current_Iowa_Correctional_System_Prison_Population.csv')
+unique(df$Prison.Admission.Type)
+df <- df %>%
+  filter(Prison.Admission.Type != "New Admit New Sentence" & Prison.Admission.Type != "Other")
+df$Education.Category <- replace(df$Education.Category, df$Education.Category == "", NA) 
+
+ggplot(df, aes(x = Age)) +
+  geom_histogram() +
+  labs(x = "Age", y = "Count", title = "Age Distribution of Reoffenders")
+
+ggplot(df, aes(x = Race...Ethnicity)) +
+  geom_bar() +
+  labs(x = "Race/Ethnicity", y = "Count", title = "Total Reoffenders by Race/Ethnicity") +
+  theme(axis.text.x = element_text(angle = 65, vjust = 1, hjust = 1))
+
+ggplot(df, aes(x = Education.Category)) +
+  geom_bar() +
+  labs(x = "Education Category", y = "Count", title = "Total Reoffenders by Education Category")
+
+ra <- df %>%
+  group_by(interaction(Race...Ethnicity, Offense.Type, sep = " . ")) %>%
+  summarize(n = n()) %>%
+  rename(total = "n") %>%
+  separate('interaction(Race...Ethnicity, Offense.Type, sep = " . ")', into = c("Race...Ethnicity", "Offense_Type"), sep = " . ")
+
+ggplot(ra, aes(x = Race...Ethnicity, y = total, fill = Offense_Type)) +
+  geom_bar(position="stack", stat="identity") +
+  labs(x = "Race/Ethnicity", y = "Count", title = "Offense Type Totals by Race/Ethnicity") +
+  theme(axis.text.x = element_text(angle = 50, vjust = 1, hjust = 1))
+
+
+ggplot(df, aes(x = Offense.Type)) +
+  geom_bar() +
+  labs(x = "Offense Type", y = "Count", title = "Total Reoffenders by Offense Type")
+
+ggplot(df, aes(x = Offense.Subtype)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(x = "Offense Subtype", y = "Count", title = "Total Reoffenders by Offense Subtype")
+```
