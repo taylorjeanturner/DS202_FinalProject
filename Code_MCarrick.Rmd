@@ -8,6 +8,7 @@ output: html_document
 ```{r}
 library(tidyverse)
 library(lubridate)
+library(scales)
 data<-readr::read_csv("Current_Iowa_correctional_System_Prison_Population.csv")
 str(data)
 
@@ -17,14 +18,14 @@ data$`Prison Start Date`<-mdy(data$`Prison Start Date`)
 ageOffense<-data%>%
   select(Age, `Offense Type`)
 
-ggplot(data=ageOffense, aes(x=Age))+geom_histogram()+ggtitle('Prisoner Age Distribution')
+ggplot(data=ageOffense, aes(x=Age))+geom_histogram(fill="dark blue")+ggtitle('Prisoner Age Distribution')
 ```
 
 The plot above shows prisoner age distribution.  It is clear that the plot is skewed right with the peak between mid-twenties and 40.
 
 ```{r}
 
-ggplot(data=ageOffense, aes(x=Age))+geom_histogram()+facet_wrap(~`Offense Type`)+ggtitle('Crimes by Prisoner Age')
+ggplot(data=ageOffense, aes(x=Age))+geom_histogram(fill="dark green")+facet_wrap(~`Offense Type`,scales='free_y')+ggtitle('Crimes by Prisoner Age')
 
 ```
 
@@ -35,7 +36,7 @@ This plot shows the age distribution in each crime type.  We are looking for dis
 violent<-data%>%
   filter(`Offense Type`=="Violent")
 
-ggplot(data=violent, aes(x=Age))+geom_histogram()+facet_wrap(~`Offense Subtype`)+ggtitle('Violent Crime Subtypes vs. Prisoner Age')
+ggplot(data=violent, aes(x=Age))+geom_histogram(fill="dark green")+facet_wrap(~`Offense Subtype`,scales='free_y')+ggtitle('Violent Crime Subtypes vs. Prisoner Age')
 ```
 
 This plot is a further breakdown of the Violent Crime Category.  It shows the age distriutions of each subtype of crime.  Again, we are looking for and expecting to see a right skew pattern.  In general, all of the individual plots follow that.  However, "Kidnap" category does not.  In general, it is not surprising that there are fewer 'older' aged prisoners especially ones that are there for more violent crimes.  This is because as people age, they tend to be less athletic and active and possibly less agressive, so commiting crimes like murder or robbery at an older age is unexpected. These crimes are also more serious, so even if they were committed when the prisoner was younger, they likely have a longer prison sentence, or even a life sentence. 
@@ -192,10 +193,10 @@ join<-join%>%
 joinLong<-join%>%
   pivot_longer(Prison:Iowa, names_to='Population', values_to='percent')
 
-ggplot(data=joinLong, aes(x=Population, weight=percent))+geom_bar()+facet_grid(Race~Sex, scales='free_y')+ylab('Percent')+ggtitle('Population Percentage of Race in Iowa and Prisons')+theme_bw()
+ggplot(data=joinLong, aes(x=Population, weight=percent))+geom_bar(fill="dark red")+facet_grid(Race~Sex, scales='free_y')+ylab('Percent')+ggtitle('Population Percentage of Race in Iowa and Prisons')+theme_bw()
 ```
 
-This plot compares gender and race in Iowa Prisons to the rest of Iowa.  The y axis represents the percent that the specific population makes up.  So in Iowa, white males make up about 50% or the population, but in prison, they represent over 60% of the population.  We can see that in every racail category, men represent a larger proportion of the prison population than the Iowa population, except for male Asians.  We can also see that in every racail category, women represent a lower proportion of the prison population that they do in Iowa, except for American Indian females.  This agrees with the earlier analysis that men are much more likely to be prisoners. This plot takes that analysis to greater depth showing that Asian males are actually less likely to be prisoners compared to males of other races.  Females, on the other hand, are under represented in prisons, unless they are American Indian.
+This plot compares gender and race in Iowa Prisons to the rest of Iowa.  The y axis represents the percent that the specific population makes up.  So in Iowa, white males make up about 50% or the population, but in prison, they represent over 60% of the population.  We can see that in every racail category, men represent a larger proportion of the prison population than the Iowa population, except for male Asians.  We can also see that in every racail category, women represent a lower proportion of the prison population that they do in Iowa, except for American Indian females.  This agrees with the earlier analysis that men are much more likely to be prisoners. This plot takes that analysis to greater depth showing that Asian males are actually underrepresented as prisoners compared to males of other races.  Females, on the other hand, are under represented in prisons, unless they are American Indian.
 
 
 
@@ -265,7 +266,7 @@ eduJoinLong<-eduJoinName%>%
   pivot_longer(Prison:Iowa, names_to='Population', values_to='percent')
 
 ##graph
-ggplot(data=eduJoinLong, aes(x=Population, weight=percent))+geom_bar()+facet_wrap(~Education)+ylab('Percent')+ggtitle('Educational Attainment Percentage')+theme_bw()
+ggplot(data=eduJoinLong, aes(x=Population, weight=percent))+geom_bar()+facet_wrap(~Education)+ylab('Percent')+ggtitle('Educational Attainment Percentage')
 ```
 
 There are many NA values on this plot, especially in the Iowa population data.  Since I do not know the reason, I am hesitent to make claims about this data.  It appears that no high school diploma, and high school diploma are both overrepresented in the prison population, while higher levels of education are more underrepresented in the prison population.
