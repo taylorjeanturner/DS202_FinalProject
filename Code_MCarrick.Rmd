@@ -1,0 +1,284 @@
+---
+title: "Code_MCarrick"
+author: "Molly Carrick"
+date: "11/17/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+data<-readr::read_csv("Current_Iowa_correctional_System_Prison_Population.csv")
+str(data)
+
+data$`Prison Start Date`<-mdy(data$`Prison Start Date`)
+
+
+ageOffense<-data%>%
+  select(Age, `Offense Type`)
+
+ggplot(data=ageOffense, aes(x=Age))+geom_histogram()+ggtitle('Prisoner Age Distribution')
+```
+
+The plot above shows prisoner age distribution.  It is clear that the plot is skewed right with the peak between mid-twenties and 40.
+
+```{r}
+
+ggplot(data=ageOffense, aes(x=Age))+geom_histogram()+facet_wrap(~`Offense Type`)+ggtitle('Crimes by Prisoner Age')
+
+```
+
+This plot shows the age distribution in each crime type.  We are looking for distributions that do not have the expected right skew that followed the general age distribution.  All of them seem to follow that right skew.  However, 'Violent' has many little peaks and does not have a normal decline.  Let's explore 'Violent' further.
+
+
+```{r}
+violent<-data%>%
+  filter(`Offense Type`=="Violent")
+
+ggplot(data=violent, aes(x=Age))+geom_histogram()+facet_wrap(~`Offense Subtype`)+ggtitle('Violent Crime Subtypes vs. Prisoner Age')
+```
+
+This plot is a further breakdown of the Violent Crime Category.  It shows the age distriutions of each subtype of crime.  Again, we are looking for and expecting to see a right skew pattern.  In general, all of the individual plots follow that.  However, "Kidnap" category does not.  In general, it is not surprising that there are fewer 'older' aged prisoners especially ones that are there for more violent crimes.  This is because as people age, they tend to be less athletic and active and possibly less agressive, so commiting crimes like murder or robbery at an older age is unexpected. These crimes are also more serious, so even if they were committed when the prisoner was younger, they likely have a longer prison sentence, or even a life sentence. 
+
+```{r}
+
+range(data$`Months Served`)
+##Months served vs. age??
+
+```
+
+
+```{r}
+drug<-data%>%
+  filter(`Offense Type`=="Drug")
+
+ggplot(data=drug, aes(x=Age))+geom_histogram()+facet_wrap(~`Offense Subtype`)+ggtitle('Drug Crime Subtypes vs. Prisoner Age')
+
+```
+
+
+This plot is a breakdown of the drug crime category.  Here, we see all the expected right skews.
+
+```{r}
+
+property<-data%>%
+  filter(`Offense Type`=="Property")
+
+ggplot(data=property, aes(x=Age))+geom_histogram()+facet_wrap(~`Offense Subtype`)+ggtitle('Property Crime Subtypes vs. Prisoner Age')
+
+```
+
+This plot is a breakdown of the property crime category.  Here, we see all the expected right skews.
+
+```{r}
+public_order<-data%>%
+  filter(`Offense Type`=="Public Order")
+
+ggplot(data=public_order, aes(x=Age))+geom_histogram()+facet_wrap(~`Offense Subtype`)+ggtitle('Public Order Crime Subtypes vs. Prisoner Age')
+
+
+
+```
+
+In Public Order crime subtypes is where the right skew pattern sort of falls off.  However, this is not necessarily shocking.  Unlike violent crimes, people who commit public order crimes don't necessarily have to be young and active.  For the most part, there is still a vague right skew pattern.  Traffic violations and OWIs are the exceptions where they both have two peaks.
+
+```{r}
+
+other<-data%>%
+  filter(`Offense Type`=="Other")
+
+ggplot(data=other, aes(x=Age))+geom_histogram()+facet_wrap(~`Offense Subtype`)+ggtitle('Other Crime Subtypes vs. Prisoner Age')
+
+
+```
+
+
+This plot is a breakdown of the other crime category.  Here, we see all the expected right skews.
+
+```{r}
+
+none<-data%>%
+  filter(`Offense Type`=="None")
+
+ggplot(data=none, aes(x=Age))+geom_histogram()+facet_wrap(~`Offense Subtype`)+ggtitle('None Crime Subtypes vs. Prisoner Age')
+
+```
+
+This plot is a breakdown of the none crime category.  Here, I am not sure what is going on.
+
+
+```{r}
+
+ggplot(data=data, aes(x=Sex, y=Age))+geom_boxplot()
+```
+
+```{r}
+
+ggplot(data=data, aes(x=Age))+geom_histogram()+facet_wrap(~`Prison Admission Type`)
+```
+
+Nothing about this plot is particularly surprising.  There are a lot more new admits, but the returners follow the same trend.
+
+##Comparing to Rest of Iowa Demographics
+##Demographics Data
+```{r}
+IA<-readr::read_csv("Iowa_Population_25_Years_and_Over_by_Sex__Race_and_Educational_Attainment__ACS_5-Year_Estimate_.csv")
+
+IApop<-IA%>%
+  filter(Sex%in%c("Male","Female"))
+
+totalIApop<-sum(IApop$`Population Estimate`)
+
+IApop$popPercent<-IApop$`Population Estimate`/totalIApop
+
+filteredIApop<-IApop%>%
+  select(Sex, Race, popPercent)
+
+IowaPop<-filteredIApop%>%
+  group_by(Sex,`Race`)%>%
+  summarize(n=sum(popPercent))
+
+IowaPop$Race<-factor(IowaPop$Race)
+
+levels(IowaPop$Race)<-gsub("White Alone","White",levels(IowaPop$`Race`))
+levels(IowaPop$Race)<-gsub("Black or African American Alone","Black",levels(IowaPop$`Race`))
+levels(IowaPop$Race)<-gsub("Asian Alone","Asian",levels(IowaPop$`Race`))
+levels(IowaPop$Race)<-gsub("American Indian and Alaska Native","American Indian",levels(IowaPop$`Race`))
+
+IowaPop<-IowaPop%>%
+  rename(popPercent=n)
+```
+
+##Prison Data
+```{r}
+IAinterval<-interval(ymd('2014/01/01'), ymd('2018/12/31'))
+
+filteredPrison<-data%>%
+  filter(Age>24, `Prison Start Date` %within% IAinterval)%>%
+  group_by(Sex,`Race & Ethnicity`)%>%
+  summarize(n=n())
+
+filteredPrison<-filteredPrison%>%
+  ungroup%>%
+  add_row(Sex="Female", `Race & Ethnicity`="Asian or Pacific Islander", n=0) 
+
+jailPop<-sum(filteredPrison$n)
+
+filteredPrison$popPercentJail<-filteredPrison$n/jailPop
+
+filteredPrison$`Race & Ethnicity`<-factor(filteredPrison$`Race & Ethnicity`)
+
+levels(filteredPrison$`Race & Ethnicity`)<-gsub("Asian or Pacific Islander","Asian",levels(filteredPrison$`Race & Ethnicity`))
+levels(filteredPrison$`Race & Ethnicity`)<-gsub("American Indian or Alaska Native","American Indian",levels(filteredPrison$`Race & Ethnicity`))
+
+filteredPrison<-filteredPrison%>%
+  rename(Race=`Race & Ethnicity`)
+```
+
+
+##Join
+```{r}
+join<-IowaPop%>%
+  inner_join(filteredPrison)
+
+join<-join%>%
+  rename(Prison='popPercentJail', Iowa='popPercent')%>%
+  select(-n)
+```
+
+
+##Pivot_Longer
+```{r}
+joinLong<-join%>%
+  pivot_longer(Prison:Iowa, names_to='Population', values_to='percent')
+
+ggplot(data=joinLong, aes(x=Population, weight=percent))+geom_bar()+facet_grid(Race~Sex, scales='free_y')+ylab('Percent')+ggtitle('Population Percentage of Race in Iowa and Prisons')+theme_bw()
+```
+
+This plot compares gender and race in Iowa Prisons to the rest of Iowa.  The y axis represents the percent that the specific population makes up.  So in Iowa, white males make up about 50% or the population, but in prison, they represent over 60% of the population.  We can see that in every racail category, men represent a larger proportion of the prison population than the Iowa population, except for male Asians.  We can also see that in every racail category, women represent a lower proportion of the prison population that they do in Iowa, except for American Indian females.  This agrees with the earlier analysis that men are much more likely to be prisoners. This plot takes that analysis to greater depth showing that Asian males are actually less likely to be prisoners compared to males of other races.  Females, on the other hand, are under represented in prisons, unless they are American Indian.
+
+
+
+##Education
+##Prison
+```{r}
+
+educationJail<-data%>%
+  filter(Age>24, `Prison Start Date` %within% IAinterval)%>%
+  group_by(`Education Category`)%>%
+  summarize(n=n())
+
+
+##
+educationIA<-IApop%>%
+  select(`Educational Attainment`, popPercent)
+
+##
+
+educationIA<-educationIA%>%
+  group_by(`Educational Attainment`)%>%
+  summarize(n=sum(popPercent))
+
+
+##Change Education Jail to percent
+total<-sum(educationJail$n)
+educationJail$percent<-educationJail$n/total
+
+##Fix names of columns to combine
+educationIA$`Educational Attainment`<-factor(educationIA$`Educational Attainment`)
+educationJail$`Education Category`<-factor(educationJail$`Education Category`)
+
+
+
+levels(educationIA$`Educational Attainment`)<-gsub("Bachelors Degree or Higher","Post-Secondary",levels(educationIA$`Educational Attainment`))
+levels(educationIA$`Educational Attainment`)<-gsub("Some College or Associates Degree","Post-Secondary",levels(educationIA$`Educational Attainment`))
+levels(educationIA$`Educational Attainment`)<-gsub("High School Graduate","HS Diploma",levels(educationIA$`Educational Attainment`))
+levels(educationIA$`Educational Attainment`)<-gsub("Less than High School","No HS Diploma",levels(educationIA$`Educational Attainment`))
+
+levels(educationJail$`Education Category`)<-gsub("HS Diploma or Equivelent","HS Diploma",levels(educationJail$`Education Category`))
+
+
+educationIA<-educationIA%>%
+  group_by(`Educational Attainment`)%>%
+  summarize(n=sum(n))%>%
+  rename(`IApercent`=n)
+
+educationIA<-educationIA%>%
+  rename("Education"=`Educational Attainment`)
+
+educationJail<-educationJail%>%
+  rename("Education"=`Education Category`)
+
+
+
+
+##join
+
+eduJoin<-educationJail%>%
+  left_join(educationIA)
+
+eduJoinName<-eduJoin%>%
+  rename(Prison='percent', Iowa='IApercent')
+
+##pivot long
+eduJoinLong<-eduJoinName%>%
+  pivot_longer(Prison:Iowa, names_to='Population', values_to='percent')
+
+##graph
+ggplot(data=eduJoinLong, aes(x=Population, weight=percent))+geom_bar()+facet_wrap(~Education)+ylab('Percent')+ggtitle('Educational Attainment Percentage')+theme_bw()
+```
+
+There are many NA values on this plot, especially in the Iowa population data.  Since I do not know the reason, I am hesitent to make claims about this data.  It appears that no high school diploma, and high school diploma are both overrepresented in the prison population, while higher levels of education are more underrepresented in the prison population.
+
+
+
+
+
+
+
+
+
+
+
+
+
