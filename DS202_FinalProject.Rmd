@@ -9,38 +9,106 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, warning=FALSE, message= FALSE}
+```{r, warning=FALSE, message= FALSE, include=FALSE}
 library(dplyr)
 library(lubridate)
 library(tidyverse)
 library(RColorBrewer)
 library(ggrepel)
+library(scales)
+data <- readr::read_csv('Current_Iowa_Correctional_System_Prison_Population.csv')
 ```
 
-```{r}
+# Background and Questions Raised #
 
-
-```
-
-## Background and Questions Raised ##
-
-For our final report, we decided to examine data on the prison population in Iowa. Ongoing problems relating to mass incarceration, law enforcement and judicial bias, as well as recent civil unrest, point to the relevancy of this analysis. Our data was obtained from the Iowa Department of Correction, containing information on prisoner age, sex, Race/Ethnicity, offense type, and other information. In this report, we examined potential paterns among incarcerated persons, seeking answers to following questions:
+For our final report, we decided to examine data on the prison population in Iowa. Ongoing problems relating to mass incarceration, law enforcement and judicial bias, as well as recent civil unrest, point to the relevancy of this analysis. Our data was obtained from the Iowa Department of Correction, containing information on prisoner age, sex, Race/Ethnicity, offense type, and other information. In this report, we examined potential patterns among incarcerated persons, seeking answers to following questions:
 
 **Question 1: **Does gender play a role in the type of offense committed?  
-**Question 2: **Is either gender underrepresented in Iowa prisons?  
+
+**Question 2: **How does the ratio of gender in Iowa prisons compare to the entire state of Iowa's population?
+
 **Question 3: **How is ethnicity represented in Iowa prisons?  
+
 **Question 4: **Is there a relationship between prisoner age and offense type?  
-**Question 5: **Does education level impact the probability of being incarcerated for a certain crime?  
+
+**Question 5: **Does education level impact the probability of being incarcerated for a certain crime?
+
 **Question 6: **How does one's education level and race/ethnicity impact the length of time spent incarcerated?  
+
 **Question 7: **Does race/ethnicity affect the amount of time served for similar crimes?  
+
 **Question 8: **What factors might lead someone to reoffend after being released?  
+
 **Question 9: **How does time served depend on the offense type?  
-**Question 10:**How do the ranges of time served for each offense type compare?  
 
+**Question 10: **How do the ranges of time served for each offense type compare?  
 
+# Obtaining and Cleaning the Dataset #
+
+The dataset was obtained from data.iowa.gov, a website that provides government data for the state of Iowa. Our dataset was pretty clean to begin with so individual members just cleaned the dataset in ways that they deemed fit for their particular exploratory analysis (i.e., renaming columns, selecting necessary columns, filtering data, etc).
 
 # Exploratory Analysis #
 
+
+## Gender and Offense Type ##
+
+**Question 1: **Does gender play a role in the type of offense committed?
+
+To start off this exploration, I first grouped the data by offense type and sex. I then summarized this data to find the total of types of offenses per gender. I wanted a visualization that would compare the gender balance for each offense type and I decided on a stacked bar chart that does so.
+```{r}
+offenses <- data%>%
+  group_by(`Offense Type`, Sex)%>%
+  summarise(Total = n(), .groups = 'drop')
+offenses <- offenses %>%
+  mutate(Total = ifelse(Sex == "Male",Total,-1*Total))
+breaks_values <- pretty(offenses$Total)
+ggplot(data = offenses, aes(x=reorder(`Offense Type`, Total), y = Total, fill=Sex))+
+  geom_bar(stat = "identity", width = 0.75)+
+  coord_flip()+
+  scale_y_continuous(breaks = breaks_values, labels = abs(breaks_values))+ 
+  scale_fill_brewer(palette = "Set1")+
+  geom_hline(yintercept = 0)+
+  ggtitle("How Gender Affects Offense Type")+
+  xlab("Offense")
+```
+
+**Analysis: **We can see that each offense type is overwhelmingly male dominated. There's not a single offense type that is even made up of even a quarter women. So, men are more likely to commit any of the offenses. Due to this staggering imbalance of gender, I decided to further this investigation and see how the ratio of gender in Iowa prisons compares to the entire state of Iowa. This brings us to question 2.
+
+**Question 2: **How does the ratio of gender in Iowa prisons compare to the entire state of Iowa's population?
+
+For this questions I found an outside data source that contained the amount of men and the amount of women in the entire state of Iowa. This dataset is from the US Census Bureau. To clean this dataset, I selected only the columns that contained men and women. I then had to use pivot longer in order to make the dataset look like our original prison dataset. I then took both datasets and found the percentage of men and the percentage of women in comparison to their respective population. Finally, I used a bar chart to show each gender and used text labels to show the percentage on the plot.
+```{r}
+genderInIA <- readr::read_csv('IowaData.csv', col_types = cols())
+genderInIA <- genderInIA%>%
+  rename(Male = S0101_C03_001E, Female = S0101_C05_001E)%>%
+  select(Male, Female)
+keep = c(FALSE, TRUE)
+genderInIA <- genderInIA[keep,]
+genderInIA$Male <- as.numeric(genderInIA$Male)
+genderInIA$Female <- as.numeric(genderInIA$Female)
+
+genderInIA <- genderInIA %>%
+  pivot_longer(cols = c(Male, Female), names_to = "Sex", values_to = "total")%>%
+  mutate(Percent = label_percent()(total/sum(total)))
+  
+genderInPrison <- data%>%group_by(Sex)%>%
+  summarise(Total=n(), .groups = 'drop')%>%
+  mutate(Percent = label_percent()(Total/sum(Total)))
+
+ggplot(genderInIA, aes(x=Sex, y=total, fill=Sex))+
+  geom_bar(stat='identity', width = .5)+ 
+  scale_fill_brewer(palette = "Set1")+
+  ggtitle("Male to Female Ratio for Iowa")+
+  geom_text(aes(label=Percent), vjust=0)
+
+ggplot(genderInPrison, aes(x=Sex, y=Total, fill=Sex))+
+  geom_bar(stat='identity', width = .5)+ 
+  scale_fill_brewer(palette = "Set1")+
+  ggtitle("Male to Female Ratio for Iowa Correctional System Prison Population")+
+  geom_text(aes(label=Percent), vjust=0)
+```
+
+**Analysis: **These plots show that Iowa's total population is made up of 50.38% women and 49.62% men, while Iowa's prison population is made up of only 7% women and 93% men. Thus, we can see that men are severely overrepresented in Iowa prisons while women are underrepresented in Iowa prisons in comparison to Iowa's total population.
 
 ## Education level and crime subtype ##
 
@@ -59,7 +127,6 @@ prisonData$Education.Category <- factor(prisonData$Education.Category , levels =
 prisonData$Education.Category[prisonData$Education.Category == ""] <-NA
 prisonData2 <- prisonData %>%
 filter(!is.na(Education.Category))
-
 ```
 
 *Step 2: Reassigning small offense subtype categories*   
@@ -136,4 +203,28 @@ ggplot(data = prisonData5, aes(x = Months.Served, fill = Race...Ethnicity)) + ge
 ```
 
 **Analysis: **Each distribution in this plot is unimodal, and right-skewed, with the vast majority of incarcerated people having served under a 100 months. However, there were several individual histograms with a very small maximum y value, in the post-secondary education plots. At a cursory glance, race/ethnicity and education don't appear to have much of an impact on the length of time incarcerated. However, summary statistics generated later (not shown), indicated that white prisoners appeared to have a slightly lower median incarceration time across all educational levels, except those in the His/AP/Ind category with Post-Secondary Educations. 
+
+# Conclusion #
+
+**We have found that: **
+
+  * There are more men compared to women in Iowa prisons and compared to Iowa’s total population, men are overrepresented
+  * Education level does appear to impact the probability of being incarcerated for a certain crime
+  * White people have been incarcerated for a slightly lower median length across most education levels
+  * Asian men are underrepresented in Iowa prisons.  In all other racial categories, men are overrepresented.  Females are underrepresented in all categories, besides American Indian.
+  * The age of a prisoner is not a good predictor of the crime committed.
+  * Race appears to have little to no effect on the amount of time served for similar crimes
+  * The most common reoffender is a white person for drug charges
+  * The biggest difference in the amount of time served is in the classification of offense received
+
+# Contributions of Work #
+**Ryan: **
+
+**Taylor: **I found and suggested the data set that we used for the project. I created our team's proposal. I explored if gender played a role in type of offense. I also found another data set to help further my investigation into the distribution of gender in prisons and if either gender was overrepresented in prison. For our presentation I wrote and presented the background of our dataset as well as my own findings.
+
+**Molly: **
+
+**Max:**
+
+**Jonathan: **
 
