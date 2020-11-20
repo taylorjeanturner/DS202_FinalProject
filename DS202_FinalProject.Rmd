@@ -130,7 +130,7 @@ filter(!is.na(Education.Category))
 ```
 
 *Step 2: Reassigning small offense subtype categories*   
-One of the difficulties faced in this analysis was the very small offense subtype categories. For example, the 'Stolen Property' subtype was a single datapoint. For better visualization, this was moved to theft category. A similar decision was made for the animals, prostituion/pimping, alcohol, and other small categories. There were a few other reassignments, that were done by methodically examining the data. For example, datapoints where the description was 'Burglary 1st degree' were not originally grouped into the burglary category. Additionally, attempted burgulary was moved to the burglary category since the criminal intent was the same
+One of the difficulties faced in this analysis was the very small offense subtype categories. For example, the 'Stolen Property' subtype was a single datapoint. For better visualization, this was moved to theft category. A similar decision was made for the animals, prostituion/pimping, alcohol, and other small categories. There were a few other reassignments, that were done by methodically examining the data. For example, datapoints where the description was 'Burglary 1st degree' were not originally grouped into the burglary category. Additionally, attempted burgulary was moved to the burglary category since the criminal intent was the same.
 ```{r}
 
 prisonData2$Offense.Subtype <- as.factor(prisonData2$Offense.Subtype)

@@ -455,7 +455,7 @@ prisonData$Education.Category[prisonData$Education.Category == &quot;&quot;] &lt
 prisonData2 &lt;- prisonData %&gt;%
 filter(!is.na(Education.Category))</code></pre>
 <p><em>Step 2: Reassigning small offense subtype categories</em><br />
-One of the difficulties faced in this analysis was the very small offense subtype categories. For example, the ‘Stolen Property’ subtype was a single datapoint. For better visualization, this was moved to theft category. A similar decision was made for the animals, prostituion/pimping, alcohol, and other small categories. There were a few other reassignments, that were done by methodically examining the data. For example, datapoints where the description was ‘Burglary 1st degree’ were not originally grouped into the burglary category. Additionally, attempted burgulary was moved to the burglary category since the criminal intent was the same</p>
+One of the difficulties faced in this analysis was the very small offense subtype categories. For example, the ‘Stolen Property’ subtype was a single datapoint. For better visualization, this was moved to theft category. A similar decision was made for the animals, prostituion/pimping, alcohol, and other small categories. There were a few other reassignments, that were done by methodically examining the data. For example, datapoints where the description was ‘Burglary 1st degree’ were not originally grouped into the burglary category. Additionally, attempted burgulary was moved to the burglary category since the criminal intent was the same.</p>
 <pre class="r"><code>prisonData2$Offense.Subtype &lt;- as.factor(prisonData2$Offense.Subtype)
 
 prisonData2$Offense.Subtype[prisonData2$Offense.Subtype == &#39;Stolen Property&#39;] &lt;- &#39;Theft&#39;
