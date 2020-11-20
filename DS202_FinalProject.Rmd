@@ -206,6 +206,87 @@ ggplot(data = prisonData5, aes(x = Months.Served, fill = Race...Ethnicity)) + ge
 
 **Analysis: **Each distribution in this plot is unimodal, and right-skewed, with the vast majority of incarcerated people having served under a 100 months. However, there were several individual histograms with a very small maximum y value, in the post-secondary education plots. At a cursory glance, race/ethnicity and education don't appear to have much of an impact on the length of time incarcerated. However, summary statistics generated later (not shown), indicated that white prisoners appeared to have a slightly lower median incarceration time across all educational levels, except those in the His/AP/Ind category with Post-Secondary Educations. 
 
+**Question 7: **Does race/ethnicity affect the amount of time served for similar crimes?  
+
+As previously stated, racial bias is a huge problem in the United States judicial system. Because of this I wanted to know if the Iowa judicial system was guilty of it too. For this I looked at the time the prisoner served, the race/ethnicity of the prisoner, and the federal classification of the crime they committed. Additionally, I only wanted to look at first time offenders because multiple offenses could result in a longer sentence.
+
+*Cleaning and Plotting*
+
+The data set we used was already very clean, so there wasn't a whole lot of cleaning that needed to be done. The first step I did was filter out all of the data points that had a return admission type, so only first time offenders remained. Next, I removed some of the crime classifications due to them only having data for one or two races. This was done because no clear conclusion would be able to be made without looking at all races. For plotting I loaded race/ethnicity on the x-axis, and time served on the y-axis. I then used geom_boxplot to visualize the data, and used facet_wrap by offense classification to group the plots by similar crimes. Finally I used free_y to allow each plot to have a different y-axis because different crimes will have different typical sentences.
+
+```{r}
+# Loading and Cleaning
+
+df <- read.csv('Current_Iowa_Correctional_System_Prison_Population.csv')
+
+df <- df %>%
+  filter(Prison.Admission.Type == "New Admit New Sentence" & Offense.Classification != "None" & Offense.Classification != "Felony - Mandatory Minimum" & Offense.Classification != "Simple Misdemeanor" & Offense.Classification != "Serious Misdemeanor" & Offense.Classification != "Other Felony")
+
+# Plotting
+
+ggplot(df, aes(x = Race...Ethnicity, y = Months.Served)) +
+  geom_boxplot() + facet_wrap(~Offense.Classification, scales = "free_y") +
+  theme(axis.text.x = element_text(angle = 65, vjust = 1, hjust = 1)) +
+  labs(x = "Ethnicity", y = "Months Served", title = "Months Served for Ethnicities Grouped by Offense Classification")
+```
+
+**Analysis: **Looking at the box plots we can see that the average time served is very similar across every race for the respective crimes. While there are outliers in the plots, every race has at least one or two large outliers. Thus, I feel the plot is enough to conclude that race/ethnicity has little to no affect on the sentence length for similar crimes in the state of Iowa.
+
+**Question 8: **What factors might lead someone to reoffend after being released? 
+
+For this question I want to know what might affect the likelyhood of someone reoffending. The areas I looked into were race/ethnicity, age, and education of the prisoners. I also made sure to filter out the data for first time offenders. Additionally, I wanted to know what type of crimes people typically commit when the reoffend, and who is the most likely to reoffend in Iowa.
+
+*Cleaning and Plotting*
+
+As stated previously, the data set we used was already very clean, so the cleaning process was fairly simple. First I filtered the data on only include those who were returning to prison. Next, the education column had some empty spaces, so I filled those in with NA. Then for the plotting I made a lot of plots for this section. First I made bar charts to look at the distribution of reoffenders for different races and education levels. Next I made a histogram to look at the distribution of their ages. Thirdly, I created another bar chart to look at the frequency of different crimes commited by the reoffender. Finally, I created a stacked bar chart of the crimes committed by race to see what each typically does to reoffend.
+
+```{r}
+# Loading and Cleaning
+
+df <- read.csv('Current_Iowa_Correctional_System_Prison_Population.csv')
+
+df <- df %>%
+  filter(Prison.Admission.Type != "New Admit New Sentence" & Prison.Admission.Type != "Other")
+df$Education.Category <- replace(df$Education.Category, df$Education.Category == "", NA) 
+
+# Plotting
+
+ggplot(df, aes(x = Age)) +
+  geom_histogram() +
+  labs(x = "Age", y = "Count", title = "Age Distribution of Reoffenders")
+
+ggplot(df, aes(x = Race...Ethnicity)) +
+  geom_bar() +
+  labs(x = "Race/Ethnicity", y = "Count", title = "Total Reoffenders by Race/Ethnicity") +
+  theme(axis.text.x = element_text(angle = 65, vjust = 1, hjust = 1))
+
+ggplot(df, aes(x = Education.Category)) +
+  geom_bar() +
+  labs(x = "Education Category", y = "Count", title = "Total Reoffenders by Education Category")
+
+ggplot(df, aes(x = Offense.Type)) +
+  geom_bar() +
+  labs(x = "Offense Type", y = "Count", title = "Total Reoffenders by Offense Type")
+
+ggplot(df, aes(x = Offense.Subtype)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(x = "Offense Subtype", y = "Count", title = "Total Reoffenders by Offense Subtype")
+
+ra <- df %>%
+  group_by(interaction(Race...Ethnicity, Offense.Type, sep = " . ")) %>%
+  summarize(n = n()) %>%
+  rename(total = "n") %>%
+  separate('interaction(Race...Ethnicity, Offense.Type, sep = " . ")', into = c("Race...Ethnicity", "Offense_Type"), sep = " . ")
+
+ggplot(ra, aes(x = Race...Ethnicity, y = total, fill = Offense_Type)) +
+  geom_bar(position="stack", stat="identity") +
+  labs(x = "Race/Ethnicity", y = "Count", title = "Offense Type Totals by Race/Ethnicity") +
+  theme(axis.text.x = element_text(angle = 50, vjust = 1, hjust = 1))
+```
+
+**Analysis: **Looking at the first two plots it is clear the the most common reoffenders are white people with a high school diploma or equivalent. This is not surprising due to the demographics of Iowa being predominantly white. Next, for the age histogram the shape is almost exactly the same as the ages for all offenders. The only difference is a slightly smaller range, so the oldest offenders are the least likely to reoffend. For the offenses, the three most common types are drug, property, and violent crimes, in that order. Finally, looking at the crimes by race we can see that white people are most likely to reoffend with a drug or property crime, while black people are most likely to have a property or violent crime. Overall, the most common reoffender is a white person with drug charges.
+
 # Conclusion #
 
 **We have found that: **
@@ -220,13 +301,14 @@ ggplot(data = prisonData5, aes(x = Months.Served, fill = Race...Ethnicity)) + ge
   * The biggest difference in the amount of time served is in the classification of offense received
 
 # Contributions of Work #
+
 **Ryan: **For this project, I examined the impact education level had on the probability of being incarcerated for a certain crime. Additionally, I examined how race/ethnicity, along with education, impacted the distribution of time incarcerated in months (questions 5, 6). Finally, I also wrote up the background and questions raised section of the final work, while also presenting my findings to the class. 
 
 **Taylor: **I found and suggested the data set that we used for the project. I created our team's proposal. I explored if gender played a role in type of offense. I also found another data set to help further my investigation into the distribution of gender in prisons and if either gender was overrepresented in prison. For our presentation I wrote and presented the background of our dataset as well as my own findings.
 
 **Molly: **
 
-**Max:**
+**Max: **First I looked into race/ethnicity to see how it might affect the length of time someone might be sentenced to for a similar federal crime classification. Next, I looked into factors the might lead somebody to reoffend after they have been released from prison. Additionally I looked into what crimes most people commit to be sent back to prison. I then presented all of my findings to the group.
 
 **Jonathan: **
 
