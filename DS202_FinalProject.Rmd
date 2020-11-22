@@ -307,6 +307,8 @@ ggplot(data = prisonData5, aes(x = Months.Served, fill = Race...Ethnicity)) + ge
 
 **Analysis: **Each distribution in this plot is unimodal, and right-skewed, with the vast majority of incarcerated people having served under a 100 months. However, there were several individual histograms with a very small maximum y value, in the post-secondary education plots. At a cursory glance, race/ethnicity and education don't appear to have much of an impact on the length of time incarcerated. However, summary statistics generated later (not shown), indicated that white prisoners appeared to have a slightly lower median incarceration time across all educational levels, except those in the His/AP/Ind category with Post-Secondary Educations. 
 
+## Race/Ethnicity vs. Time Served for Similar Crimes
+
 **Question 7: **Does race/ethnicity affect the amount of time served for similar crimes?  
 
 As previously stated, racial bias is a huge problem in the United States judicial system. Because of this I wanted to know if the Iowa judicial system was guilty of it too. For this I looked at the time the prisoner served, the race/ethnicity of the prisoner, and the federal classification of the crime they committed. Additionally, I only wanted to look at first time offenders because multiple offenses could result in a longer sentence.
@@ -333,15 +335,17 @@ ggplot(df, aes(x = Race...Ethnicity, y = Months.Served)) +
 
 **Analysis: **Looking at the box plots we can see that the average time served is very similar across every race for the respective crimes. While there are outliers in the plots, every race has at least one or two large outliers. Thus, I feel the plot is enough to conclude that race/ethnicity has little to no affect on the sentence length for similar crimes in the state of Iowa.
 
+## Possible Reasons for Reoffence
+
 **Question 8: **What factors might lead someone to reoffend after being released? 
 
-For this question I want to know what might affect the likelyhood of someone reoffending. The areas I looked into were race/ethnicity, age, and education of the prisoners. I also made sure to filter out the data for first time offenders. Additionally, I wanted to know what type of crimes people typically commit when the reoffend, and who is the most likely to reoffend in Iowa.
+For this question I want to know what might affect the likelihood of someone reoffending. The areas I looked into were race/ethnicity, age, and education of the prisoners. I also made sure to filter out the data for first time offenders. Additionally, I wanted to know what type of crimes people typically commit when the reoffend, and who is the most likely to reoffend in Iowa.
 
 *Cleaning and Plotting*
 
 As stated previously, the data set we used was already very clean, so the cleaning process was fairly simple. First I filtered the data on only include those who were returning to prison. Next, the education column had some empty spaces, so I filled those in with NA. Then for the plotting I made a lot of plots for this section. First I made bar charts to look at the distribution of reoffenders for different races and education levels. Next I made a histogram to look at the distribution of their ages. Thirdly, I created another bar chart to look at the frequency of different crimes commited by the reoffender. Finally, I created a stacked bar chart of the crimes committed by race to see what each typically does to reoffend.
 
-```{r}
+```{r, message= FALSE}
 # Loading and Cleaning
 
 df <- read.csv('Current_Iowa_Correctional_System_Prison_Population.csv')
@@ -351,28 +355,24 @@ df <- df %>%
 df$Education.Category <- replace(df$Education.Category, df$Education.Category == "", NA) 
 
 # Plotting
+# Commented out plots were used on the presentation, but omitted here to save space.
 
-ggplot(df, aes(x = Age)) +
-  geom_histogram() +
-  labs(x = "Age", y = "Count", title = "Age Distribution of Reoffenders")
-
-ggplot(df, aes(x = Race...Ethnicity)) +
-  geom_bar() +
-  labs(x = "Race/Ethnicity", y = "Count", title = "Total Reoffenders by Race/Ethnicity") +
-  theme(axis.text.x = element_text(angle = 65, vjust = 1, hjust = 1))
-
-ggplot(df, aes(x = Education.Category)) +
-  geom_bar() +
-  labs(x = "Education Category", y = "Count", title = "Total Reoffenders by Education Category")
-
-ggplot(df, aes(x = Offense.Type)) +
-  geom_bar() +
-  labs(x = "Offense Type", y = "Count", title = "Total Reoffenders by Offense Type")
-
-ggplot(df, aes(x = Offense.Subtype)) +
-  geom_bar() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
-  labs(x = "Offense Subtype", y = "Count", title = "Total Reoffenders by Offense Subtype")
+# ggplot(df, aes(x = Age)) +
+#   geom_histogram() +
+#   labs(x = "Age", y = "Count", title = "Age Distribution of Reoffenders")
+# 
+# ggplot(df, aes(x = Race...Ethnicity)) +
+#   geom_bar() +
+#   labs(x = "Race/Ethnicity", y = "Count", title = "Total Reoffenders by Race/Ethnicity") +
+#   theme(axis.text.x = element_text(angle = 65, vjust = 1, hjust = 1))
+# 
+# ggplot(df, aes(x = Education.Category)) +
+#   geom_bar() +
+#   labs(x = "Education Category", y = "Count", title = "Total Reoffenders by Education Category")
+# 
+# ggplot(df, aes(x = Offense.Type)) +
+#   geom_bar() +
+#   labs(x = "Offense Type", y = "Count", title = "Total Reoffenders by Offense Type")
 
 ra <- df %>%
   group_by(interaction(Race...Ethnicity, Offense.Type, sep = " . ")) %>%
@@ -386,7 +386,7 @@ ggplot(ra, aes(x = Race...Ethnicity, y = total, fill = Offense_Type)) +
   theme(axis.text.x = element_text(angle = 50, vjust = 1, hjust = 1))
 ```
 
-**Analysis: **Looking at the first two plots it is clear the the most common reoffenders are white people with a high school diploma or equivalent. This is not surprising due to the demographics of Iowa being predominantly white. Next, for the age histogram the shape is almost exactly the same as the ages for all offenders. The only difference is a slightly smaller range, so the oldest offenders are the least likely to reoffend. For the offenses, the three most common types are drug, property, and violent crimes, in that order. Finally, looking at the crimes by race we can see that white people are most likely to reoffend with a drug or property crime, while black people are most likely to have a property or violent crime. Overall, the most common reoffender is a white person with drug charges.
+**Analysis: **This analysis was done including the commented out plots. Looking at the first two plots it is clear the the most common reoffenders are white people with a high school diploma or equivalent. This is not surprising due to the demographics of Iowa being predominantly white. Next, for the age histogram the shape is almost exactly the same as the ages for all offenders. The only difference is a slightly smaller range, so the oldest offenders are the least likely to reoffend. For the offenses, the three most common types are drug, property, and violent crimes, in that order. Finally, looking at the crimes by race we can see that white people are most likely to reoffend with a drug or property crime, while black people are most likely to have a property or violent crime. Overall, the most common reoffender is a white person with drug charges.
 
 # Conclusion #
 
