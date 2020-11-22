@@ -41,7 +41,7 @@ For our final report, we decided to examine data on the prison population in Iow
 
 **Question 9: **How does time served depend on the offense type?  
 
-**Question 10: **How do the ranges of time served for each offense type compare?  
+**Question 10: **What data point makes the biggest impact on the amount of months served? 
 
 # Obtaining and Cleaning the Dataset #
 
@@ -388,14 +388,69 @@ ggplot(ra, aes(x = Race...Ethnicity, y = total, fill = Offense_Type)) +
 
 **Analysis: **This analysis was done including the commented out plots. Looking at the first two plots it is clear the the most common reoffenders are white people with a high school diploma or equivalent. This is not surprising due to the demographics of Iowa being predominantly white. Next, for the age histogram the shape is almost exactly the same as the ages for all offenders. The only difference is a slightly smaller range, so the oldest offenders are the least likely to reoffend. For the offenses, the three most common types are drug, property, and violent crimes, in that order. Finally, looking at the crimes by race we can see that white people are most likely to reoffend with a drug or property crime, while black people are most likely to have a property or violent crime. Overall, the most common reoffender is a white person with drug charges.
 
+##What Impacts Time Served
+
+**Question 9: **How does time served depend on the offense type?  
+
+For this question I wanted to learn how much the type of offense a person receives impacts the amount of time a person spends in prison. I removed any rows that had 'None' as the offense type as I only wanted to look at valid offense types. I then found the maximum, minimum and average of each offense type and joined all three into one dataset.
+
+```{r, message= FALSE}
+
+#cleaning and filtering
+
+newData <- data[!(data$`Offense Type` == 'None'),]
+
+min <- newData %>% group_by(`Offense Type`) %>% filter(`Months Served` == min(`Months Served`)) %>% select(`Offense Type`, `Months Served`) %>% rename(`Min Months Served` = `Months Served`) %>% distinct()
+
+max <- newData %>% group_by(`Offense Type`) %>% filter(`Months Served` == max(`Months Served`)) %>% select(`Offense Type`, `Months Served`) %>% rename(`Max Months Served` = `Months Served`)
+
+avg <- newData %>% group_by(`Offense Type`) %>% summarise(`Months Served` = mean(`Months Served`)) %>% select(`Offense Type`, `Months Served`) %>% rename(`Avg Months Served` = `Months Served`)
+
+# joining
+
+join <- full_join(max, avg)
+join <- full_join(join, min)
+
+join$Range <- join$`Max Months Served` - join$`Avg Months Served`
+
+#plotting
+
+join %>% ggplot(aes(x=reorder(`Offense Type`, -`Max Months Served`))) + geom_bar(aes(y=`Max Months Served`, fill = "Max Months Served"), stat="identity", position ="identity") + geom_bar(aes(y=`Avg Months Served`, fill = "Avg Months Served"), stat="identity", position ="identity") + geom_bar(aes(y=`Min Months Served`, fill = "Min Months Served"), stat="identity", position ="identity") + scale_fill_manual(name = "legend",values = c("Max Months Served" = "deepskyblue4", "Avg Months Served" = "chartreuse4", "Min Months Served" = "red")) + labs(x = "Offense Type", y = "Months Served", title = "Max and Average Months Served for Offense Type")
+
+#join %>% ggplot(aes(x=reorder(`Offense Type`, -`Avg Months Served`), y=`Avg Months Served`)) + geom_bar(stat="identity", position ="identity", fill="chartreuse4") + ggtitle("Average Months Served for Offense Type") + xlab("Offense Type")
+```
+
+**Analysis: **Looking at the bar chart, the violent offense type had the highest maximum and public order had the lowest which is expected. Each of the subsequent offense types had a steady downward decrease of around 200 months except for drug to public order where it only changed around 100 months. For the averages, Violent once again has the highest and public order has the lowest, following the same trend as the maximums, but interestingly though, the property category did have the second highest maximum but has the fourth highest average. I also looked into the difference between the maximum and average of each category to see the range of how much a person could spend in prison for each category. I found that the ranges of months served followed the same order as the maximums which makes sense. Finally looking at the minimums for each category, each category had a minimum months served as 1.
+
+**Question 10: **What data point makes the biggest impact on the amount of months served?
+
+For this question, I was curious as to what other factors besides the type of the offense makes a big impact on the amount of months served. I looked into sex, Race/Ethnicity and the offense classification. 
+
+```{r, message= FALSE}
+sex <- data %>% group_by(`Sex`) %>% summarise(`Months Served` = mean(`Months Served`)) %>% select(`Sex`, `Months Served`)
+race <- data %>% group_by(`Race & Ethnicity`) %>% summarise(`Months Served` = mean(`Months Served`)) %>% select(`Race & Ethnicity`, `Months Served`)
+offense <- data %>% group_by(`Offense Classification`) %>% summarise(`Months Served` = mean(`Months Served`)) %>% select(`Offense Classification`, `Months Served`) %>% arrange(desc(`Months Served`))
+
+offense %>% ggplot(aes(x=reorder(`Offense Classification`, -`Months Served`), y=`Months Served`)) + geom_bar(stat="identity") + theme(axis.text.x=element_text(angle=45, hjust=1)) + labs(x = "Offense Classification", y = "Months Served", title = "Avg Months Served for Offense Classification")
+
+#Plots used on the presentation, but omitted here to save space.
+
+#race %>% ggplot(aes(x=reorder(`Race & Ethnicity`, -`Months Served`), y=`Months Served`)) + geom_bar(stat="identity") + theme(axis.text.x=element_text(angle=45, hjust=1)) + labs(x = "Race & Ethnicity", y = "Months Served", title = "Avg Months Served for Race/Ethnicity")
+
+#sex %>% ggplot(aes(x=reorder(`Sex`, -`Months Served`), y=`Months Served`)) + geom_bar(stat="identity") + labs(x = "Sex", y = "Months Served", title = "Avg Months Served for Male vs Female")
+
+```
+
+**Analysis: **The most interesting piece of data that I found was the surprisingly big difference between the average amount of months served for a 'A Felony' and a 'B Felony', around a 150 month difference. After the 'B Felony' classification there is a more gradual downward slope but the difference between 'A Felony' and 'B Felony' created the largest difference in months served out of all other data points. The plots relating to Race/Ethnicity and sex were commented out to save space. But for Race/Ethnicity, I was surprised by the shockingly small difference between the average amount of months served for whites and blacks. As blacks are over-represented in prison I expected to see a similar increase the average amount of months they serve as well, but while they do serve on average more time than whites it is a less than 2 month difference. Finally I looked at sex as well and and noticed a 20 month difference in the average amount of time served. This is closer to what is expected with more men being in prison. 
+
 # Conclusion #
 
 **We have found that: **
 
-  * There are more men compared to women in Iowa prisons and compared to Iowa’s total population, men are overrepresented
+  * There are more men compared to women in Iowa prisons and compared to Iowa’s total population, men are over-represented
   * Education level does appear to impact the probability of being incarcerated for a certain crime
   * White people have been incarcerated for a slightly lower median length across most education levels
-  * Asian men are underrepresented in Iowa prisons.  In all other racial categories, men are overrepresented.  Females are underrepresented in all categories, besides American Indian.
+  * Asian men are underrepresented in Iowa prisons.  In all other racial categories, men are over-represented.  Females are under-represented in all categories, besides American Indian.
   * The age of a prisoner is not a good predictor of the crime committed.
   * Race appears to have little to no effect on the amount of time served for similar crimes
   * The most common reoffender is a white person for drug charges
@@ -405,11 +460,11 @@ ggplot(ra, aes(x = Race...Ethnicity, y = total, fill = Offense_Type)) +
 
 **Ryan: **For this project, I examined the impact education level had on the probability of being incarcerated for a certain crime. Additionally, I examined how race/ethnicity, along with education, impacted the distribution of time incarcerated in months (questions 5, 6). Finally, I also wrote up the background and questions raised section of the final work, while also presenting my findings to the class. 
 
-**Taylor: **I found and suggested the data set that we used for the project. I created our team's proposal. I explored if gender played a role in type of offense. I also found another data set to help further my investigation into the distribution of gender in prisons and if either gender was overrepresented in prison. For our presentation I wrote and presented the background of our dataset as well as my own findings.
+**Taylor: **I found and suggested the data set that we used for the project. I created our team's proposal. I explored if gender played a role in type of offense. I also found another data set to help further my investigation into the distribution of gender in prisons and if either gender was over-represented in prison. For our presentation I wrote and presented the background of our dataset as well as my own findings.
 
 **Molly: **My role included exploring questions 3,4 which were how ethnicity is represented in Iowa prisons and if age and offense type are correlated.  For question 3, I found an additional dataset to use, which included demographics for all of Iowa. I cleaned this dataset and manipulated it to see if any other questions could be answered with it. I shared what I found with the rest of my group.
 
 **Max: **First I looked into race/ethnicity to see how it might affect the length of time someone might be sentenced to for a similar federal crime classification. Next, I looked into factors the might lead somebody to reoffend after they have been released from prison. Additionally I looked into what crimes most people commit to be sent back to prison. I then presented all of my findings to the group.
 
-**Jonathan: **
+**Jonathan: **I looked in to what differance the type of offense makes on the months served and comapred the maximums, averages and the differance between the maximum and average. I also looked what impact other data points have on months served, including offense classification, race/ethnicity and sex. I shared my findings withe my team. Finally, I presented our conclusions to the class during our presentation. 
 

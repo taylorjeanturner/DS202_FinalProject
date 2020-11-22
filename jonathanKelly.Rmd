@@ -1,0 +1,56 @@
+---
+title: "JonathanKelly"
+author: "Jonathan Kelly"
+date: "11/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+data <- readr::read_csv('Current_Iowa_Correctional_System_Prison_Population.csv')
+data$`Prison Start Date` <- mdy(data$`Prison Start Date`)
+data$`Report Date` <- mdy(data$`Report Date`)
+```
+
+```{r}
+data <- data[!(data$`Offense Type` == 'None'),]
+
+min <- data %>% group_by(`Offense Type`) %>% filter(`Months Served` == min(`Months Served`)) %>% select(`Offense Type`, `Months Served`) %>% rename(`Min Months Served` = `Months Served`) %>% distinct()
+
+max <- data %>% group_by(`Offense Type`) %>% filter(`Months Served` == max(`Months Served`)) %>% select(`Offense Type`, `Months Served`) %>% rename(`Max Months Served` = `Months Served`)
+avg <- data %>% group_by(`Offense Type`) %>% summarise(`Months Served` = mean(`Months Served`)) %>% select(`Offense Type`, `Months Served`) %>% rename(`Avg Months Served` = `Months Served`)
+
+join <- full_join(max, avg)
+join <- full_join(join, min)
+
+join$Range <- join$`Max Months Served` - join$`Avg Months Served`
+
+join
+
+join %>% ggplot(aes(x=reorder(`Offense Type`, -`Max Months Served`))) + geom_bar(aes(y=`Max Months Served`, fill = "Max Months Served"), stat="identity", position ="identity") + geom_bar(aes(y=`Avg Months Served`, fill = "Avg Months Served"), stat="identity", position ="identity") + geom_bar(aes(y=`Min Months Served`, fill = "Min Months Served"), stat="identity", position ="identity") + scale_fill_manual(name = "legend",values = c("Max Months Served" = "deepskyblue4", "Avg Months Served" = "chartreuse4", "Min Months Served" = "red")) + labs(x = "Offense Type", y = "Months Served", title = "Max and Average Months Served for Offense Type")
+
+join %>% ggplot(aes(x=reorder(`Offense Type`, -`Avg Months Served`), y=`Avg Months Served`)) + geom_bar(stat="identity", position ="identity", fill="chartreuse4") + ggtitle("Average Months Served for Offense Type") + xlab("Offense Type")
+
+min %>% ggplot(aes(x=`Offense Type`, y=`Min Months Served`)) + geom_bar(stat="identity", position ="identity", fill="Red") + ggtitle("Minimum Months Served for Offense Type") + ylim(0,91)
+```
+
+```{r}
+sex <- data %>% group_by(`Sex`) %>% summarise(`Months Served` = mean(`Months Served`)) %>% select(`Sex`, `Months Served`)
+education <- data %>% group_by(`Education Category`) %>% summarise(`Months Served` = mean(`Months Served`)) %>% select(`Education Category`, `Months Served`)
+race <- data %>% group_by(`Race & Ethnicity`) %>% summarise(`Months Served` = mean(`Months Served`)) %>% select(`Race & Ethnicity`, `Months Served`)
+offense <- data %>% group_by(`Offense Classification`) %>% summarise(`Months Served` = mean(`Months Served`)) %>% select(`Offense Classification`, `Months Served`) %>% arrange(desc(`Months Served`))
+
+offense %>% ggplot(aes(x=reorder(`Offense Classification`, -`Months Served`), y=`Months Served`)) + geom_bar(stat="identity") + theme(axis.text.x=element_text(angle=45, hjust=1)) + labs(x = "Offense Classification", y = "Months Served", title = "Avg Months Served for Offense Classification")
+
+race %>% ggplot(aes(x=reorder(`Race & Ethnicity`, -`Months Served`), y=`Months Served`)) + geom_bar(stat="identity") + theme(axis.text.x=element_text(angle=45, hjust=1)) + labs(x = "Race & Ethnicity", y = "Months Served", title = "Avg Months Served for Race/Ethnicity")
+
+education %>% ggplot(aes(x=reorder(`Education Category`, -`Months Served`), y=`Months Served`)) + geom_bar(stat="identity") + labs(x = "Sex", y = "Months Served", title = "Avg Months Served for Male vs Female")
+
+sex %>% ggplot(aes(x=reorder(`Sex`, -`Months Served`), y=`Months Served`)) + geom_bar(stat="identity") + labs(x = "Sex", y = "Months Served", title = "Avg Months Served for Male vs Female")
+```
