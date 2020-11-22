@@ -358,7 +358,7 @@ df <- df %>%
 df$Education.Category <- replace(df$Education.Category, df$Education.Category == "", NA) 
 
 # Plotting
-# Commented out plots were used in our presentation, but omitted from our final report as we felt other visualizations were more pertaining to the story
+# Commented out plots were used on the presentation, but omitted here to save space.
 
 # ggplot(df, aes(x = Age)) +
 #   geom_histogram() +
