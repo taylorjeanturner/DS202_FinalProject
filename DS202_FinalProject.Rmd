@@ -110,6 +110,107 @@ ggplot(genderInPrison, aes(x=Sex, y=Total, fill=Sex))+
 
 **Analysis: **These plots show that Iowa's total population is made up of 50.38% women and 49.62% men, while Iowa's prison population is made up of only 7% women and 93% men. Thus, we can see that men are severely overrepresented in Iowa prisons while women are underrepresented in Iowa prisons in comparison to Iowa's total population.
 
+## Ethnicity Representation ##
+
+**Question 3: **How is ethnicity represented in Iowa prisons?
+
+After seeing that gender is not evenly represented in Iowa prisons, I wanted to explore how ethnicity is represented. For this analysis, I found an additional dataset that included population estimates for the state of Iowa between the years 2014-2018. It included gender and race information for Iowans ages 25 and up.  This dataset is from data.iowa.gov, which is where we obtained the original prison dataset. 
+
+*Cleaning and Plotting*
+
+Since this question involved two different datasets, the data wrangling was more complex. First, I had to create columns that represented percentage in each population. Then, I had to rename ethnicity levels in both datasets in order to get them to match. I also had to filter the prison dataset, since the Iowa dataset I needed to compare it to only had data between years 2014-2018 and for ages 25 and up. After that was done, I was able to join the two datasets by gender and ethnicity. In addition, I had to use the pivot_longer function, so that I could visualize the percentages side-by-side. I plotted the visualization in a facet grid, so that I could compare ethnicities by each gender.  I also freed-up the y axis to make it easier to read the percentages for each ethnicity.
+
+```{r}
+##Iowa Data Cleaning/Filtering
+IA<-readr::read_csv("Iowa_Population_25_Years_and_Over_by_Sex__Race_and_Educational_Attainment__ACS_5-Year_Estimate_.csv")
+
+IApop<-IA%>%
+  filter(Sex%in%c("Male","Female"))
+
+totalIApop<-sum(IApop$`Population Estimate`)
+
+IApop$popPercent<-IApop$`Population Estimate`/totalIApop
+
+filteredIApop<-IApop%>%
+  select(Sex, Race, popPercent)
+
+IowaPop<-filteredIApop%>%
+  group_by(Sex,`Race`)%>%
+  summarize(n=sum(popPercent))
+
+IowaPop$Race<-factor(IowaPop$Race)
+
+levels(IowaPop$Race)<-gsub("White Alone","White",levels(IowaPop$`Race`))
+levels(IowaPop$Race)<-gsub("Black or African American Alone","Black",levels(IowaPop$`Race`))
+levels(IowaPop$Race)<-gsub("Asian Alone","Asian",levels(IowaPop$`Race`))
+levels(IowaPop$Race)<-gsub("American Indian and Alaska Native","American Indian",levels(IowaPop$`Race`))
+
+IowaPop<-IowaPop%>%
+  rename(popPercent=n)
+
+##Prison Data Cleaning/Filtering
+IAinterval<-interval(ymd('2014/01/01'), ymd('2018/12/31'))
+
+data$`Prison Start Date`<-mdy(data$`Prison Start Date`)
+
+filteredPrison<-data%>%
+  filter(Age>24, `Prison Start Date` %within% IAinterval)%>%
+  group_by(Sex,`Race & Ethnicity`)%>%
+  summarize(n=n())
+
+filteredPrison<-filteredPrison%>%
+  ungroup%>%
+  add_row(Sex="Female", `Race & Ethnicity`="Asian or Pacific Islander", n=0) 
+
+jailPop<-sum(filteredPrison$n)
+
+filteredPrison$popPercentJail<-filteredPrison$n/jailPop
+
+filteredPrison$`Race & Ethnicity`<-factor(filteredPrison$`Race & Ethnicity`)
+
+levels(filteredPrison$`Race & Ethnicity`)<-gsub("Asian or Pacific Islander","Asian",levels(filteredPrison$`Race & Ethnicity`))
+levels(filteredPrison$`Race & Ethnicity`)<-gsub("American Indian or Alaska Native","American Indian",levels(filteredPrison$`Race & Ethnicity`))
+
+filteredPrison<-filteredPrison%>%
+  rename(Race=`Race & Ethnicity`)
+
+##Join
+join<-IowaPop%>%
+  inner_join(filteredPrison)
+
+join<-join%>%
+  rename(Prison='popPercentJail', Iowa='popPercent')%>%
+  select(-n)
+
+##Pivot Longer
+joinLong<-join%>%
+  pivot_longer(Prison:Iowa, names_to='Population', values_to='percent')
+
+##Plot
+ggplot(data=joinLong, aes(x=Population, weight=percent))+geom_bar(fill="dark red")+facet_grid(Race~Sex, scales='free_y')+ylab('Percent')+ggtitle('Population Percentage of Race in Iowa and Prisons')+theme_bw()
+```
+
+**Analysis: **This plot compares gender and race in Iowa Prisons to the rest of Iowa.  The y axis represents the percent that the specific population makes up.  So in Iowa, white males make up a little less than 50% of the population, but in prison, they represent over 60% of the population.  We can see that in every racail category, men represent a larger proportion of the prison population than the Iowa population, except for male Asians.  We can also see that in every racail category, women represent a lower proportion of the prison population than they do in Iowa, except for American Indian females.  This agrees with the earlier analysis that men are more likely to be prisoners than women. This plot takes that analysis to greater depth showing that Asian males are actually underrepresented as prisoners compared to males of other races.  Females, on the other hand, are underrepresented in prisons, unless they are American Indian.
+
+## Age and Offense Type ##
+
+**Question 4: **Is there a relationship between prisoner age and offense type?
+
+In this analysis, I wanted to explore if prisoner age was correlated with offense type. First, I looked at prisoner age distribution and found that it is skewed right with a peak between the ages of 20 and 40. Then I plotted more age distribution plots faceted by crime type to see if there were irregularities that did not follow that shape. For the most part, they were all consistently skewed right.  The exception being the "violent" crime type, which was skewed, but it also had several peaks.  I decided to plot the subtypes of "violent" to try to gain insight on why the shape was different.
+
+*Cleaning and Plotting*
+
+Plotting was a fairly easy process for this question.  The first step was filtering the original dataset to only include violent crimes.  Then, I plotted the filtered data as a histogram in order to see age distribution.  I also used facet_wrap to look at the subtype categories of violent crime individually and freed-up the y-axis to make it easier to read.
+
+```{r}
+violent<-data%>%
+  filter(`Offense Type`=="Violent")
+
+ggplot(data=violent, aes(x=Age))+geom_histogram(fill="dark green")+facet_wrap(~`Offense Subtype`,scales='free_y')+ggtitle('Violent Crime Subtypes vs. Prisoner Age')
+```
+
+**Analysis: **Most of the subtypes of violent crime also have a right skew shape. The main exception is the "kidnap" subtype. It shows an opposite trend compared to the other plots as it increases and peaks around age 60. This could mean a couple of things. It could mean that kidnapping is often committed around age 60. It could also mean that since kidnapping is a serious crime, the jail sentence is longer than the average crime sentence. This means that older aged prisoners may have committed the crime years ago and are still serving time. Overall, prisoner ages and most offenses are negatively correlated-meaning that as age increases, the number of prisoners decrease. Since this is a pattern found in most all of the categories, it would be very difficult to predict a prisoner's offense by only knowing their age.
+
 ## Education level and crime subtype ##
 
 **Question 5: **Does a person's education level impact the probability of being incarcerated for a certain crime?  
@@ -306,7 +407,7 @@ ggplot(ra, aes(x = Race...Ethnicity, y = total, fill = Offense_Type)) +
 
 **Taylor: **I found and suggested the data set that we used for the project. I created our team's proposal. I explored if gender played a role in type of offense. I also found another data set to help further my investigation into the distribution of gender in prisons and if either gender was overrepresented in prison. For our presentation I wrote and presented the background of our dataset as well as my own findings.
 
-**Molly: **
+**Molly: **My role included exploring questions 3,4 which were how ethnicity is represented in Iowa prisons and if age and offense type are correlated.  For question 3, I found an additional dataset to use, which included demographics for all of Iowa. I cleaned this dataset and manipulated it to see if any other questions could be answered with it. I shared what I found with the rest of my group.
 
 **Max: **First I looked into race/ethnicity to see how it might affect the length of time someone might be sentenced to for a similar federal crime classification. Next, I looked into factors the might lead somebody to reoffend after they have been released from prison. Additionally I looked into what crimes most people commit to be sent back to prison. I then presented all of my findings to the group.
 
